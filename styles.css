@@ -80,3 +80,16 @@ footer{color:#bfc8e7}
 @media (pointer:fine){body,button,a,select,input,textarea{cursor:none}#cq-cursor{position:fixed;z-index:99999;pointer-events:none;width:20px;height:20px;border:2px solid #ff8dba;border-radius:50%;box-shadow:0 0 14px #a59bff,0 0 28px rgba(143,156,255,.55);transform:translate(-50%,-50%);transition:width .12s,height .12s;mix-blend-mode:screen}#cq-cursor:after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;left:6px;top:6px}body:has(button:hover) #cq-cursor{width:29px;height:29px;border-color:#fff}}
 @media(max-width:800px){.skillmap-wrap{overflow-x:auto}.skillmap{height:680px;min-height:680px;width:980px}.skill-node{max-width:120px}.skill-node small{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.skill-node,.skill-link{animation:none!important}}
+
+.lesson-stack{display:grid;gap:18px;max-width:1120px;margin:0 auto}
+.teacher-panel{border-color:rgba(255,141,186,.42)!important}
+.teacher-panel h3,.editor-panel h3{margin-top:8px}
+.example-callout{border-left:3px solid #ff8dba;background:rgba(255,141,186,.09);padding:12px 16px;border-radius:0 12px 12px 0;margin:16px 0}
+.code-editor{display:block;width:100%;min-height:220px;resize:vertical;padding:16px;border-radius:12px;background:#070b1b!important;color:#fff!important;border:1px solid rgba(164,179,255,.42);font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}
+.runner-output{min-height:72px;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(4,7,19,.9);color:#f7f8ff;font:13px/1.6 ui-monospace,monospace}
+.runner-output.good{border-color:rgba(103,239,202,.55);color:#a6ffe4}
+.runner-output.bad{border-color:rgba(255,141,186,.55);color:#ffd2e3}
+.editor-panel label{display:block;margin:12px 0 8px;color:#fff;font-weight:650}
+.lesson-stack details{padding:12px;border:1px solid var(--line);border-radius:10px}
+.lesson-stack summary{cursor:pointer;font-weight:650}
+@media(min-width:1000px){.lesson-stack{grid-template-columns:1fr 1fr;max-width:none}.lesson-stack>.panel:last-child{grid-column:1/-1}}
