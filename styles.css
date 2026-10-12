@@ -52,3 +52,31 @@ input,select,textarea{max-width:100%}
 .skill-sidequest{position:absolute;z-index:4;display:flex;flex-direction:column;gap:5px;width:190px;text-align:left;padding:12px;border:1px dashed #36738a;border-radius:15px;background:#182328;color:#c8d9dd;cursor:pointer}.skill-sidequest b{font-size:10px;color:#69c5e6}.skill-sidequest span{font-size:12px}.skill-sidequest small{font-size:10px;color:#829397}.side-one{left:3%;top:5%}.side-two{right:3%;bottom:7%}
 .map-legend{position:absolute;bottom:10px;left:15px;right:15px;display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#a6b2b4}
 @media(max-width:800px){.skillmap{height:620px;min-width:700px}.skill-node{width:135px}.skill-node small{font-size:9px}.skill-project{width:145px}.skill-sidequest{width:160px}}
+
+
+/* CodeQuest galaxy refresh: accessible contrast, full-screen map, subtle motion. */
+:root{--space:#070b1b;--ink:#f7f8ff;--muted:#c4cbe3;--panel:rgba(17,24,52,.86);--line:rgba(155,174,255,.25);--paper:#090d20;--accent:#ff8dba;--accent2:#8f9cff}
+html,body{background:#070b1b;color:#f7f8ff}
+body{background-image:radial-gradient(ellipse at 12% 15%,rgba(91,78,194,.27),transparent 35%),radial-gradient(ellipse at 85% 12%,rgba(24,133,177,.2),transparent 32%),radial-gradient(ellipse at 52% 95%,rgba(165,69,157,.2),transparent 38%),radial-gradient(1.5px 1.5px at 14% 28%,#fff 45%,transparent 55%),radial-gradient(1px 1px at 76% 34%,#fff 45%,transparent 55%),radial-gradient(1px 1px at 63% 77%,#fff 45%,transparent 55%),radial-gradient(2px 2px at 91% 68%,#d5ddff 45%,transparent 55%),linear-gradient(145deg,#070b1b,#11122d 58%,#090d20);background-attachment:fixed}
+input,textarea,select{color:#fff!important;background:rgba(9,13,32,.96)!important;border-color:rgba(164,179,255,.35)!important}
+input::placeholder,textarea::placeholder{color:#c5cce4!important;opacity:1}
+option{background:#10152d;color:#fff}
+.card,.panel,.path-card,.goal-card,.project,.badge,.levelbox,.hero{background:rgba(15,21,47,.82)!important;color:#f7f8ff;border-color:rgba(160,177,255,.24)!important;backdrop-filter:blur(12px)}
+.muted,.sub,.stat-note,small{color:#c4cbe3}
+.btn{color:#f8f9ff;border-color:rgba(173,186,255,.38)}
+.btn.primary{background:linear-gradient(120deg,#ff78ad,#9c8cff);color:#100d22;border:0}
+footer{color:#bfc8e7}
+.skillmap-wrap{width:100%;max-width:none;min-height:calc(100vh - 190px);margin:0;overflow:visible}
+.skillmap{width:100%;min-height:calc(100vh - 220px);height:calc(100vh - 220px);min-width:760px;position:relative;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,rgba(92,83,184,.24),transparent 55%),linear-gradient(135deg,rgba(9,14,36,.94),rgba(20,22,57,.9));border:1px solid rgba(159,175,255,.28);box-shadow:inset 0 0 90px rgba(99,88,212,.12),0 22px 80px rgba(0,0,0,.2)}
+.skill-node{animation:nodeReveal .65s both;animation-delay:calc(var(--node-order,0)*90ms);box-shadow:0 0 0 1px rgba(180,190,255,.16),0 0 25px rgba(119,112,255,.12)}
+.skill-node:nth-of-type(1){--node-order:0}.skill-node:nth-of-type(2){--node-order:1}.skill-node:nth-of-type(3){--node-order:2}.skill-node:nth-of-type(4){--node-order:3}.skill-node:nth-of-type(5){--node-order:4}.skill-node:nth-of-type(6){--node-order:5}.skill-node:nth-of-type(7){--node-order:6}.skill-node:nth-of-type(8){--node-order:7}.skill-node:nth-of-type(9){--node-order:8}.skill-node:nth-of-type(10){--node-order:9}.skill-node:nth-of-type(11){--node-order:10}.skill-node:nth-of-type(12){--node-order:11}
+.skill-node.available .skill-hex{filter:drop-shadow(0 0 12px rgba(255,141,186,.42))}
+.skill-node.mastered .skill-hex{filter:drop-shadow(0 0 14px rgba(103,239,202,.35))}
+.skill-link{stroke:rgba(146,157,255,.4);stroke-width:2.2;stroke-dasharray:8 9;animation:starPath 2.4s linear infinite}
+.link-open{stroke:#ff8dba;stroke-width:3}
+@keyframes nodeReveal{from{opacity:0;transform:translateY(16px) scale(.82);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes starPath{to{stroke-dashoffset:-34}}
+/* Draw a small comet cursor; preserve native cursor on touch devices. */
+@media (pointer:fine){body,button,a,select,input,textarea{cursor:none}#cq-cursor{position:fixed;z-index:99999;pointer-events:none;width:20px;height:20px;border:2px solid #ff8dba;border-radius:50%;box-shadow:0 0 14px #a59bff,0 0 28px rgba(143,156,255,.55);transform:translate(-50%,-50%);transition:width .12s,height .12s;mix-blend-mode:screen}#cq-cursor:after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;left:6px;top:6px}body:has(button:hover) #cq-cursor{width:29px;height:29px;border-color:#fff}}
+@media(max-width:800px){.skillmap-wrap{overflow-x:auto}.skillmap{height:680px;min-height:680px;width:980px}.skill-node{max-width:120px}.skill-node small{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.skill-node,.skill-link{animation:none!important}}
