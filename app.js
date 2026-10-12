@@ -130,7 +130,7 @@ async function runLessonCode(checkOnly){
    window.__cqPyodide.setStdout({batched:s=>{pyOutput+=s+"\\n"}});
    try{await window.__cqPyodide.runPythonAsync(source)}catch(err){say("Python error:\\n"+String(err));return}
    output=pyOutput.trim();
-   if(!checkOnly){say("Output:\\n"+(output||"(no output)"),true);return}
+   if(!checkOnly){say(output||"(no output)",true);return}
    const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
    const normalize=s=>String(s).trim().replace(/\\r/g,"").replace(/\\.0$/,"");
    if(normalize(output)===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
@@ -147,7 +147,7 @@ async function runLessonCode(checkOnly){
    await new Promise(resolve=>setTimeout(resolve,250));window.removeEventListener("message",listener);sandbox.remove();
    output=got.trim();
    if(failed){say("JavaScript error:\\n"+failed.trim());return}
-   if(!checkOnly){say("Output:\\n"+(output||"(no output)"),true);return}
+   if(!checkOnly){say(output||"(no output)",true);return}
    const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
    if(output===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}else say("Not passed yet.\\nYour output: "+(output||"(empty)")+"\\nExpected: "+expected);
    return;
@@ -162,7 +162,7 @@ async function runLessonCode(checkOnly){
   */
   const data=await response.json();output=String(data.run?.output||"").trim();error=String(data.run?.stderr||data.compile?.stderr||"").trim();
   if(data.compile?.code!==0||data.run?.code!==0||error){say("Your code needs a fix.\n"+(error||output||"Execution failed"));return}
-  if(!checkOnly){say("Output:\n"+(output||"(no output)"),true);return}
+  if(!checkOnly){say(output||"(no output)",true);return}
   const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
   const normalize=s=>String(s).trim().replace(/\r/g,"").replace(/\.0$/,"");
   if(normalize(output)===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
