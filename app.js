@@ -101,8 +101,44 @@ function render(){try{const views={dashboard,paths,tree,goals,quiz,projects,stat
 function openLesson(l,i){lang=l;moduleIndex=i;state.selected=l;save();view="lesson";$("#crumb").textContent="Lesson";$("#content").innerHTML=lesson(l,i);wire()}
 function toast(msg){let t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.append(t);setTimeout(()=>t.remove(),2500)}
 function modal(title,body){$("#modal").innerHTML=`<div class="modalback"><div class="modalbox" role="dialog" aria-modal="true"><h2>${title}</h2>${body}</div></div>`}
+
+async function runLessonCode(checkOnly){
+ const editor=$("#cq-code-editor"),out=$("#runnerOutput"),run=$("#runCode"),check=$("#checkCode");
+ if(!editor||!out)return;
+ const source=editor.value, currentLang=lang, i=moduleIndex;
+ const say=(s,good=false)=>{out.textContent=s;out.className="runner-output "+(good?"good":"bad")};
+ if(check){check.disabled=true;check.textContent="Checking…"} if(run)run.disabled=true;
+ try{
+  let output="",error="";
+  if(["HTML","CSS","React"].includes(currentLang)){
+   if(currentLang==="React"){say("React preview isn't configured yet. Use the example as a reference; this track cannot be auto-graded in the browser yet.");return}
+   const frame=document.createElement("iframe");frame.setAttribute("sandbox","");frame.title="Code preview";frame.style.cssText="width:100%;height:220px;background:white;border:1px solid #aaa;border-radius:10px";
+   const src=currentLang==="CSS"?"<style>"+source.replace(/<\/style/gi,"")+"</style><main><h1>Hello, world!</h1><p>Change your CSS and preview the result.</p><button>Example button</button></main>":source;
+   out.replaceChildren(frame);frame.srcdoc=src;output="Preview opened";
+   if(checkOnly){const text=source.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();const ok=currentLang==="HTML"?/Hello, world!/i.test(text):currentLang==="CSS"?/color\s*:/.test(source):false;if(ok){passLesson();say("Passed! Your preview includes the required "+(currentLang==="HTML"?"greeting":"style rule")+".",true)}else say("Not quite. Check the hint, make the requested change, then run the test again.");}
+   return;
+  }
+  if(currentLang==="Roblox Lua (Luau)"){const ok=/print\s*\(\s*["']Hello, world!["']\s*\)/.test(source);if(checkOnly&&ok){passLesson();say("Lesson check passed. Run this in Roblox Studio to verify it there too.",true)}else say("Luau game APIs need Roblox Studio. For this first lesson, include print(\"Hello, world!\") and test it in Studio.");return}
+  if(currentLang==="C+"){say("C+ is ambiguous. Please clarify whether you mean C, C++, or another language.");return}
+  const runtime=RUNTIMES[currentLang];
+  if(!runtime){say("No safe online runner is configured for this language yet.");return}
+  say("Running in the online interpreter…");
+  const response=await fetch("https://emkc.org/api/v2/piston/execute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:runtime[0],version:runtime[1],files:[{name:currentLang==="Python"?"main.py":"main",content:source}],stdin:""})});
+  if(!response.ok)throw new Error("The code runner returned HTTP "+response.status);
+  const data=await response.json();output=String(data.run?.output||"").trim();error=String(data.run?.stderr||data.compile?.stderr||"").trim();
+  if(data.compile?.code!==0||data.run?.code!==0||error){say("Your code needs a fix.\n"+(error||output||"Execution failed"));return}
+  if(!checkOnly){say("Output:\n"+(output||"(no output)"),true);return}
+  const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
+  const normalize=s=>String(s).trim().replace(/\r/g,"").replace(/\.0$/,"");
+  if(normalize(output)===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
+  else say("Not passed yet.\nYour output: "+(output||"(empty)")+"\nExpected: "+expected+"\nHint: "+["Print the greeting exactly as shown.","Print the greeting with the name Ada.","Make the condition print negative for -2.","Call add(2, 3) and print the returned value.","Calculate the average of 2, 4, and 6."][i]);
+ }catch(e){say("Couldn't reach the online runner. Check your connection and try again.\n"+e.message+"\nIf this persists, the public runner may be unavailable.")}
+ finally{if(check){check.disabled=false;check.textContent="Run tests & unlock next lesson"}if(run)run.disabled=false}
+}
+function passLesson(){const b=$("#complete"),s=$("#masteryStatus");if(b){b.disabled=false;b.textContent="Master lesson · +50 XP"}if(s)s.textContent="Tests passed! You can now mark this lesson mastered and unlock the next lesson."}
+
 function wire(){
-$$(".nav[data-view]").forEach(b=>{b.setAttribute("aria-current",b.dataset.view===view?"page":"false");b.onclick=()=>{view=b.dataset.view;render();$("#sidebar").classList.remove("open")}});$$(".brand[data-view]").forEach(b=>b.onclick=e=>{e.preventDefault();view=b.dataset.view;render();$("#sidebar").classList.remove("open")});
+$("#runCode")?.addEventListener("click",()=>runLessonCode(false));$("#checkCode")?.addEventListener("click",()=>runLessonCode(true));$("#resetCode")?.addEventListener("click",()=>{const e=$("#cq-code-editor");if(e)e.value=(EDITORS[lang]||EDITORS.JavaScript)[moduleIndex]||(EDITORS[lang]||EDITORS.JavaScript)[0];const o=$("#runnerOutput");if(o)o.textContent="Example reset. Run it when you're ready.";const b=$("#complete");if(b)b.disabled=true});$$(".nav[data-view]").forEach(b=>{b.setAttribute("aria-current",b.dataset.view===view?"page":"false");b.onclick=()=>{view=b.dataset.view;render();$("#sidebar").classList.remove("open")}});$$(".brand[data-view]").forEach(b=>b.onclick=e=>{e.preventDefault();view=b.dataset.view;render();$("#sidebar").classList.remove("open")});
 $$("[data-action]").forEach(b=>b.onclick=()=>{let a=b.dataset.action;if(a==="open"){lang=b.dataset.lang;state.selected=lang;view="tree";save();render()}if(a==="resume"){openLesson(lang,STAGES.findIndex((_,i)=>!done(lang,i))<0?STAGES.length-1:STAGES.findIndex((_,i)=>!done(lang,i)))}if(a==="view-paths"){view="paths";render()}if(a==="tree-lang"){lang=b.dataset.lang;state.selected=lang;save();render()}if(a==="module"){let i=Number(b.dataset.index),l=b.dataset.lang;if(i===0||done(l,i-1))openLesson(l,i)}if(a==="back-tree"){view="tree";render()}if(a==="toggle-goal"){let g=state.goals.find(x=>x.id==b.dataset.id);if(g){g.done=b.checked;save();render()}}if(a==="delete-goal"){state.goals=state.goals.filter(x=>x.id!=b.dataset.id);save();render()}if(a==="project"){let p=PROJECTS[Number(b.dataset.index)];state.projectSeen=true;save();modal(p[0],`<p>${p[2]}</p><h3>Acceptance checklist</h3><ul>${p[3].map(x=>`<li>${x}</li>`).join("")}</ul><p class="muted small">Include setup instructions, meaningful tests, limitations and a short design-decision log.</p><div class="actions"><button class="btn" id="closeModal">Close</button><button class="btn primary" id="addProjectGoal">Add to goals</button></div>`);$("#closeModal").onclick=()=>$("#modal").innerHTML="";$("#addProjectGoal").onclick=()=>{state.goals.push({id:Date.now(),title:"Build: "+p[0],detail:"Complete acceptance checklist and write a README.",done:false});save();$("#modal").innerHTML="";toast("Project added to goals.");if(view==="goals")render()}}});
 $("#pathSearch")?.addEventListener("input",filterPaths);$("#cat")?.addEventListener("change",filterPaths);
 $("#goalForm")?.addEventListener("submit",e=>{e.preventDefault();let title=$("#goalTitle").value.trim();if(!title)return;state.goals.push({id:Date.now(),title,detail:$("#goalDetail").value.trim(),done:false});save();render();toast("Goal added.")});
