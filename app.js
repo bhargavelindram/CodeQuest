@@ -127,7 +127,7 @@ async function runLessonCode(checkOnly){
    }
    window.__cqPyodide=window.__cqPyodide||await window.loadPyodide();
    let pyOutput="";
-   window.__cqPyodide.setStdout({batched:s=>{pyOutput+=s+"\\n"}});
+   window.__cqPyodide.setStdout({batched:s=>{pyOutput+=s+"\n"}});
    try{await window.__cqPyodide.runPythonAsync(source)}catch(err){say("Python error:\\n"+String(err));return}
    output=pyOutput.trim();
    if(!checkOnly){say(output||"(no output)",true);return}
