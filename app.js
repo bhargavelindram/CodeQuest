@@ -120,11 +120,46 @@ async function runLessonCode(checkOnly){
   }
   if(currentLang==="Roblox Lua (Luau)"){const ok=/print\s*\(\s*["']Hello, world!["']\s*\)/.test(source);if(checkOnly&&ok){passLesson();say("Lesson check passed. Run this in Roblox Studio to verify it there too.",true)}else say("Luau game APIs need Roblox Studio. For this first lesson, include print(\"Hello, world!\") and test it in Studio.");return}
   if(currentLang==="C+"){say("C+ is ambiguous. Please clarify whether you mean C, C++, or another language.");return}
+  if(currentLang==="Python"){
+   say("Starting Python in your browser…");
+   if(!window.loadPyodide){
+    await new Promise((resolve,reject)=>{const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js";script.onload=resolve;script.onerror=()=>reject(new Error("Could not load the browser Python runtime from CDN."));document.head.appendChild(script)});
+   }
+   window.__cqPyodide=window.__cqPyodide||await window.loadPyodide();
+   let pyOutput="";
+   window.__cqPyodide.setStdout({batched:s=>{pyOutput+=s+"\\n"}});
+   try{await window.__cqPyodide.runPythonAsync(source)}catch(err){say("Python error:\\n"+String(err));return}
+   output=pyOutput.trim();
+   if(!checkOnly){say("Output:\\n"+(output||"(no output)"),true);return}
+   const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
+   const normalize=s=>String(s).trim().replace(/\\r/g,"").replace(/\\.0$/,"");
+   if(normalize(output)===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
+   else say("Not passed yet.\\nYour output: "+(output||"(empty)")+"\\nExpected: "+expected+"\\nHint: "+["Print the greeting exactly as shown.","Print the greeting with the name Ada.","Make the condition print negative for -2.","Call add(2, 3) and print the returned value.","Calculate the average of 2, 4, and 6."][i]);
+   return;
+  }
+  if(currentLang==="JavaScript"){
+   const sandbox=document.createElement("iframe");sandbox.setAttribute("sandbox","allow-scripts");sandbox.title="JavaScript code sandbox";sandbox.style.display="none";document.body.appendChild(sandbox);
+   const payload=JSON.stringify(source);
+   const html='<script>const send=(type,text)=>parent.postMessage({cqRunner:true,type,text},"*");console.log=(...x)=>send("out",x.map(String).join(" "));console.error=(...x)=>send("err",x.map(String).join(" "));try{(new Function('+payload+'))()}catch(e){send("err",e.message)}<\\/script>';
+   let got="",failed="";
+   const listener=e=>{if(e.source!==sandbox.contentWindow||!e.data?.cqRunner)return;if(e.data.type==="out")got+=e.data.text+"\\n";if(e.data.type==="err")failed+=e.data.text+"\\n"};
+   window.addEventListener("message",listener);sandbox.srcdoc=html;
+   await new Promise(resolve=>setTimeout(resolve,250));window.removeEventListener("message",listener);sandbox.remove();
+   output=got.trim();
+   if(failed){say("JavaScript error:\\n"+failed.trim());return}
+   if(!checkOnly){say("Output:\\n"+(output||"(no output)"),true);return}
+   const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
+   if(output===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}else say("Not passed yet.\\nYour output: "+(output||"(empty)")+"\\nExpected: "+expected);
+   return;
+  }
   const runtime=RUNTIMES[currentLang];
-  if(!runtime){say("No safe online runner is configured for this language yet.");return}
-  say("Running in the online interpreter…");
+  if(!runtime){say("No browser runner is configured for this language yet.");return}
+  say("The old public runner now requires authorization (HTTP 401). This language needs a configured execution service; Python and JavaScript run directly in your browser.");
+  return;
+  /* Legacy remote runner kept disabled until CodeQuest has its own secure execution service.
   const response=await fetch("https://emkc.org/api/v2/piston/execute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:runtime[0],version:runtime[1],files:[{name:currentLang==="Python"?"main.py":"main",content:source}],stdin:""})});
   if(!response.ok)throw new Error("The code runner returned HTTP "+response.status);
+  */
   const data=await response.json();output=String(data.run?.output||"").trim();error=String(data.run?.stderr||data.compile?.stderr||"").trim();
   if(data.compile?.code!==0||data.run?.code!==0||error){say("Your code needs a fix.\n"+(error||output||"Execution failed"));return}
   if(!checkOnly){say("Output:\n"+(output||"(no output)"),true);return}
