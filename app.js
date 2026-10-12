@@ -78,7 +78,7 @@ const EDITORS={
 "CSS":['body { font-family: system-ui; }','h1 { color: rebeccapurple; }','p { padding: 1rem; border: 1px solid; }','.cards { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }','button:focus-visible { outline:3px solid dodgerblue; }'],
 "Java":['class Main { public static void main(String[] args) { System.out.println("Hello, world!"); } }'],
 "C++":['#include <iostream>\nint main(){ std::cout << "Hello, world!\\n"; }'],
-"TypeScript":['console.log("Hello, world!")'], "PHP":['<?php echo "Hello, world!"; ?>'], "Kotlin":['fun main() { println("Hello, world!") }'], "C#":['Console.WriteLine("Hello, world!");'], "Rust":['fn main() { println!("Hello, world!"); }'], "Swift":['print("Hello, world!")'], "R":['cat("Hello, world!\\n")'], "Go (Golang)":['package main\nimport "fmt"\nfunc main(){fmt.Println("Hello, world!")}'], "Lua":['print("Hello, world!")'], "Roblox Lua (Luau)":['print("Hello, world!")'], "SQL":['SELECT \'Hello, world!\' AS greeting;'], "React":['function App(){ return <h1>Hello, world!</h1>; }'], "C+":['/* Please clarify the intended language. */']};
+"TypeScript":['console.log("Hello, world!")'], "PHP":['<?php echo "Hello, world!"; ?>'], "Kotlin":['fun main() { println("Hello, world!") }'], "C#":['Console.WriteLine("Hello, world!");'], "Rust":['fn main() { println!("Hello, world!"); }'], "Swift":['print("Hello, world!")'], "R":['cat("Hello, world!\\n")'], "Go (Golang)":['package main\nimport "fmt"\nfunc main(){fmt.Println("Hello, world!")}'], "Lua":['print("Hello, world!")'], "Roblox Lua (Luau)":['print("Hello, world!")'], "SQL":['SELECT \'Hello, world!\' AS greeting;'], "React":['function App(){ return <h1>Hello, world!</h1>; }'], "C+":['#include <stdio.h>\nint main(void) { printf("Hello, world!\\n"); return 0; }']};
 const RUNTIMES={"Python":["python","3.10.0"],"JavaScript":["javascript","18.15.0"],"Java":["java","15.0.2"],"C++":["c++","10.2.0"],"TypeScript":["typescript","5.0.3"],"PHP":["php","8.2.3"],"Kotlin":["kotlin","1.8.20"],"C#":["csharp","6.12.0"],"Rust":["rust","1.68.2"],"Swift":["swift","5.8.0"],"R":["r","4.1.1"],"Go (Golang)":["go","1.16.2"],"Lua":["lua","5.4.4"],"SQL":["sqlite3","3.36.0"]};
 function lesson(l,i){
 const titles=["Meet print()","Store a value","Make a decision","Write a function","Work with a list"];
@@ -119,7 +119,7 @@ async function runLessonCode(checkOnly){
    return;
   }
   if(currentLang==="Roblox Lua (Luau)"){const ok=/print\s*\(\s*["']Hello, world!["']\s*\)/.test(source);if(checkOnly&&ok){passLesson();say("Lesson check passed. Run this in Roblox Studio to verify it there too.",true)}else say("Luau game APIs need Roblox Studio. For this first lesson, include print(\"Hello, world!\") and test it in Studio.");return}
-  if(currentLang==="C+"){say("C+ is ambiguous. Please clarify whether you mean C, C++, or another language.");return}
+  if(currentLang==="C+"){ /* Treat this track as C (the C programming language). */ }
   if(currentLang==="Python"){
    say("Starting Python in your browser…");
    if(!window.loadPyodide){
@@ -152,22 +152,38 @@ async function runLessonCode(checkOnly){
    if(output===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}else say("Not passed yet.\\nYour output: "+(output||"(empty)")+"\\nExpected: "+expected);
    return;
   }
+  const targetLang=currentLang==="C+"?"C":currentLang;
+  if(["C++","C#","C"].includes(targetLang)){
+   say("Connecting to compiler…");
+   const catalogRes=await fetch("https://wandbox.org/api/list.json");
+   if(!catalogRes.ok)throw new Error("Compiler list request failed (HTTP "+catalogRes.status+").");
+   const catalog=await catalogRes.json();
+   const choices=catalog.filter(c=>String(c.language||"").toLowerCase()===targetLang.toLowerCase());
+   if(!choices.length)throw new Error("No "+targetLang+" compiler is currently available.");
+   const preferred=targetLang==="C++"?["gcc-head","gcc-15","gcc-14","gcc-13","gcc-12","clang-head"]:targetLang==="C"?["gcc-head-c","gcc-15-c","gcc-14-c","gcc-13-c","gcc-12-c","clang-head-c"]:["dotnetcore","mono-6.12.0","mono-6.10.0","mono-5.20.1"];
+   const compiler=choices.find(c=>preferred.includes(c.name))||choices.find(c=>/gcc|clang|dotnet|mono/i.test(c.name))||choices[0];
+   let code=source;
+   if(targetLang==="C++"&&!/\bint\s+main\s*\(/.test(code))code="#include <iostream>\n#include <string>\n#include <vector>\n#include <numeric>\n#include <unordered_map>\n#include <stdexcept>\nint main(){\n"+code+"\nreturn 0;\n}";
+   if(targetLang==="C"&&!/\bint\s+main\s*\(/.test(code))code="#include <stdio.h>\nint main(void){\n"+code+"\nreturn 0;\n}";
+   if(targetLang==="C#"&&!/\bclass\s+\w+/.test(code)&&!/\bstatic\s+void\s+Main\s*\(/.test(code))code="using System;\nusing System.Collections.Generic;\nusing System.Linq;\nclass Program { static void Main() {\n"+code+"\n} }";
+   const response=await fetch("https://wandbox.org/api/compile.json",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({compiler:compiler.name,code,stdin:"",save:false})});
+   if(!response.ok)throw new Error("Compiler request failed (HTTP "+response.status+").");
+   const data=await response.json();
+   output=String(data.program_output||"").trim();
+   error=String(data.compiler_error||data.program_error||data.compiler_message||"").trim();
+   if(data.status!==undefined&&String(data.status)!=="0"||error&&!output){say(error||"Compilation failed",false);return}
+   if(!checkOnly){say(output||"(no output)",true);return}
+   const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
+   if(output===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
+   else say("Not passed yet.\nYour output: "+(output||"(empty)")+"\nExpected: "+expected);
+   return;
+  }
   const runtime=RUNTIMES[currentLang];
-  if(!runtime){say("No browser runner is configured for this language yet.");return}
-  say("The old public runner now requires authorization (HTTP 401). This language needs a configured execution service; Python and JavaScript run directly in your browser.");
+  if(!runtime){say("No execution service is configured for this language yet.");return}
+  say("This language's runner is not configured yet. Python and JavaScript run in your browser; C, C++, and C# use the online compiler.");
   return;
-  /* Legacy remote runner kept disabled until CodeQuest has its own secure execution service.
-  const response=await fetch("https://emkc.org/api/v2/piston/execute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:runtime[0],version:runtime[1],files:[{name:currentLang==="Python"?"main.py":"main",content:source}],stdin:""})});
-  if(!response.ok)throw new Error("The code runner returned HTTP "+response.status);
-  */
-  const data=await response.json();output=String(data.run?.output||"").trim();error=String(data.run?.stderr||data.compile?.stderr||"").trim();
-  if(data.compile?.code!==0||data.run?.code!==0||error){say("Your code needs a fix.\n"+(error||output||"Execution failed"));return}
-  if(!checkOnly){say(output||"(no output)",true);return}
-  const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];
-  const normalize=s=>String(s).trim().replace(/\r/g,"").replace(/\.0$/,"");
-  if(normalize(output)===expected){passLesson();say("Passed! Expected output matched: "+expected,true)}
-  else say("Not passed yet.\nYour output: "+(output||"(empty)")+"\nExpected: "+expected+"\nHint: "+["Print the greeting exactly as shown.","Print the greeting with the name Ada.","Make the condition print negative for -2.","Call add(2, 3) and print the returned value.","Calculate the average of 2, 4, and 6."][i]);
- }catch(e){say("Couldn't reach the online runner. Check your connection and try again.\n"+e.message+"\nIf this persists, the public runner may be unavailable.")}
+ }
+ catch(e){say("Couldn't reach the online runner. Check your connection and try again.\n"+e.message+"\nIf this persists, the public runner may be unavailable.")}
  finally{if(check){check.disabled=false;check.textContent="Run tests & unlock next lesson"}if(run)run.disabled=false}
 }
 function passLesson(){const b=$("#complete"),s=$("#masteryStatus");if(b){b.disabled=false;b.textContent="Master lesson · +50 XP"}if(s)s.textContent="Tests passed! You can now mark this lesson mastered and unlock the next lesson."}
