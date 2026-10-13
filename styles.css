@@ -225,3 +225,7 @@ footer{background:rgba(5,7,20,.5);border-color:rgba(157,171,255,.15);color:#929f
  .topnav .account-nav{margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){body:before{animation:none!important}}
+
+.cq-orbit-logo{display:inline-grid;place-items:center;vertical-align:middle;width:25px;height:25px;margin-right:8px;border-radius:9px;color:#10112a;font-size:15px;background:linear-gradient(135deg,#e4c5ff,#80e9ff);box-shadow:0 0 18px rgba(148,126,255,.35);position:relative}
+.cq-orbit-logo:after{content:"";position:absolute;inset:-4px;border:1px solid rgba(133,218,255,.25);border-radius:50%;transform:rotate(-28deg) scaleX(1.25)}
+.crumb-sep{color:#636f9e;margin:0 7px}
