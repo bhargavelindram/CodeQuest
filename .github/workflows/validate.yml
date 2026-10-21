@@ -1,0 +1,19 @@
+name: Validate CodeQuest
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check browser JavaScript syntax
+        run: node --check app.js
+      - name: Ensure cloud config contains no private service-role key
+        run: |
+          ! grep -Eiq 'service[_-]?role[_-]?key[[:space:]]*[:=]' auth-config.js
