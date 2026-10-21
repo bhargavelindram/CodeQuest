@@ -1,0 +1,32 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS","Content-Type":"application/json"};
+const out=(s:number,b:unknown)=>new Response(JSON.stringify(b),{status:s,headers:cors});
+const expected=["Hello, world!","Hello, Ada","negative","5","4"];
+const aliases:Record<string,string[]>={"Python":["python"],"JavaScript":["javascript","nodejs"],"Java":["java"],"C":["c"],"C++":["c++"],"TypeScript":["typescript"],"PHP":["php"],"Kotlin":["kotlin"],"C#":["c#","csharp"],"Rust":["rust"],"Swift":["swift"],"R":["r"],"Go (Golang)":["go","golang"],"Lua":["lua"],"SQL":["sql","sqlite3"]};
+Deno.serve(async(req)=>{
+ if(req.method==="OPTIONS")return new Response("ok",{headers:cors});if(req.method!=="POST")return out(405,{error:"POST only"});
+ const auth=req.headers.get("Authorization")||"";if(!auth.startsWith("Bearer "))return out(401,{error:"Sign in first."});
+ const url=Deno.env.get("SUPABASE_URL")!,anon=Deno.env.get("SUPABASE_ANON_KEY")!,service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+ const client=createClient(url,anon,{global:{headers:{Authorization:auth}}});const {data:{user}}=await client.auth.getUser();if(!user)return out(401,{error:"Session expired"});
+ let b:any;try{b=await req.json()}catch{return out(400,{error:"Invalid JSON"})}
+ const language=String(b.language||""),i=Number(b.lessonIndex),source=String(b.source||"").slice(0,12000);
+ if(!aliases[language]||!Number.isInteger(i)||i<0||i>4||!source)return out(400,{error:"Unsupported language or lesson"});
+ if(["HTML","CSS","React","Roblox Lua (Luau)"].includes(language))return out(422,{error:"This lesson needs a browser/Studio-specific test and cannot receive a server-verified certificate yet."});
+ const list=await fetch("https://wandbox.org/api/list.json");if(!list.ok)return out(503,{error:"Public compiler unavailable"});const catalog=await list.json();
+ const names=aliases[language];const candidates=catalog.filter((c:any)=>names.includes(String(c.language||"").toLowerCase())||names.includes(String(c.name||"").toLowerCase()));
+ if(!candidates.length)return out(503,{error:"No compiler currently available for "+language});
+ const compiler=candidates.find((c:any)=>/gcc|clang|python|nodejs|java|php|kotlin|rust|swift|golang|go-|lua|sqlite|r-|typescript|dotnet|mono/i.test(c.name))||candidates[0];
+ let code=source;
+ if(language==="C++"&&!/\bint\s+main\s*\(/.test(code))code="#include <iostream>\nint main(){\n"+code+"\n}";
+ if(language==="C"&&!/\bint\s+main\s*\(/.test(code))code="#include <stdio.h>\nint main(){\n"+code+"\n}";
+ if(language==="Java"&&!/class\s+Main/.test(code))code="class Main{public static void main(String[] args){\n"+code+"\n}}";
+ if(language==="Kotlin"&&!/fun\s+main\s*\(/.test(code))code="fun main(){\n"+code+"\n}";
+ if(language==="Rust"&&!/fn\s+main\s*\(/.test(code))code="fn main(){\n"+code+"\n}";
+ if(language==="Go (Golang)"&&!/package\s+main/.test(code))code='package main\nimport "fmt"\nfunc main(){\n'+code+"\n}";
+ if(language==="PHP"&&!/<\?php/i.test(code))code="<?php\n"+code;
+ const res=await fetch("https://wandbox.org/api/compile.json",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({compiler:compiler.name,code,stdin:"",save:false})});
+ if(!res.ok)return out(503,{error:"Compiler unavailable"});const result=await res.json();const actual=String(result.program_output||"").trim().replace(/^\[1\]\s*/,"").replace(/\s+/g," ");
+ const wanted=expected[i];if(String(result.status)!=="0"||!actual.includes(wanted))return out(200,{passed:false,output:actual,error:String(result.compiler_error||result.program_error||"Output did not match the lesson test").slice(0,1200)});
+ const admin=createClient(url,service);const saved=await admin.from("lesson_passes").upsert({user_id:user.id,language,lesson_index:i,verified_output:actual,verified_at:new Date().toISOString()},{onConflict:"user_id,language,lesson_index"});
+ if(saved.error)return out(500,{error:"Could not save verified pass"});return out(200,{passed:true,output:actual,verified:true});
+});
