@@ -81,7 +81,7 @@ const EDITORS={
 "Java":['class Main { public static void main(String[] args) { System.out.println("Hello, world!"); } }'],
 "C++":['#include <iostream>\nint main(){ std::cout << "Hello, world!\\n"; }'],
 "TypeScript":['console.log("Hello, world!")'], "PHP":['<?php echo "Hello, world!"; ?>'], "Kotlin":['fun main() { println("Hello, world!") }'], "C#":['Console.WriteLine("Hello, world!");'], "Rust":['fn main() { println!("Hello, world!"); }'], "Swift":['print("Hello, world!")'], "R":['cat("Hello, world!\\n")'], "Go (Golang)":['package main\nimport "fmt"\nfunc main(){fmt.Println("Hello, world!")}'], "Lua":['print("Hello, world!")'], "Roblox Lua (Luau)":['print("Hello, world!")'], "SQL":['SELECT \'Hello, world!\' AS greeting;'], "React":['function App(){ return <h1>Hello, world!</h1>; }'], "C+":['#include <stdio.h>\nint main(void) { printf("Hello, world!\\n"); return 0; }']};
-const RUNTIMES={"Python":["python","3.10.0"],"JavaScript":["javascript","18.15.0"],"Java":["java","15.0.2"],"C++":["c++","10.2.0"],"TypeScript":["typescript","5.0.3"],"PHP":["php","8.2.3"],"Kotlin":["kotlin","1.8.20"],"C#":["csharp","6.12.0"],"Rust":["rust","1.68.2"],"Swift":["swift","5.8.0"],"R":["r","4.1.1"],"Go (Golang)":["go","1.16.2"],"Lua":["lua","5.4.4"],"SQL":["sqlite3","3.36.0"]};
+const RUNTIMES={"Python":["python","3.10.0"],"JavaScript":["javascript","18.15.0"],"Java":["java","15.0.2"],"C++":["c++","10.2.0"],"TypeScript":["typescript","5.0.3"],"PHP":["php","8.2.3"],"Kotlin":["kotlin","1.8.20"],"C#":["csharp","6.12.0"],"Rust":["rust","1.68.2"],"Swift":["swift","5.8.0"],"R":["r","4.1.1"],"Go (Golang)":["go","1.16.2"],"Lua":["lua","5.4.4"],"SQL":["sqlite3","3.36.0"],"C":["c","latest"]};
 function lesson(l,i){
 const titles=["Meet print()","Store a value","Make a decision","Write a function","Work with a list"];
 const tasks=["Make the program print exactly: Hello, world!","Create a variable named name with the value Ada, then print Hello, Ada.","Set n to -2 and print: negative","Create an add function and display the result of 2 + 3.","Create a collection with 2, 4, 6 and display its average."];
@@ -113,7 +113,7 @@ async function runLessonCode(checkOnly){
  try{
   let output="",error="";
   if(["HTML","CSS","React"].includes(currentLang)){
-   if(currentLang==="React"){say("React preview isn't configured yet. Use the example as a reference; this track cannot be auto-graded in the browser yet.");return}
+   if(currentLang==="React"){const frame=document.createElement("iframe");frame.setAttribute("sandbox","allow-scripts");frame.title="React preview";frame.style.cssText="width:100%;height:260px;background:white;border:1px solid #aaa;border-radius:10px";const doc='<!doctype html><div id="root"></div><script src="https://unpkg.com/react@18/umd/react.development.js"><\\/script><script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\\/script><script type="text/babel">const {useState}=React;'+source+';const Root=typeof Welcome!=="undefined"?()=> <Welcome name="Ada"/>:typeof Status!=="undefined"?()=> <Status count={1}/>:typeof Counter!=="undefined"?Counter:()=> <div>React component loaded</div>;ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);<\\/script>';out.replaceChildren(frame);frame.srcdoc=doc;if(checkOnly){await new Promise(resolve=>setTimeout(resolve,900));const txt=frame.contentDocument?.body?.innerText||"";if(/Hello, Ada|Active|0|1/.test(txt)){passLesson();say("React component rendered in the preview.",true)}else say("Preview started. Check the component and browser connection.")}else say("React preview loaded.",true);return}
    const frame=document.createElement("iframe");frame.setAttribute("sandbox","");frame.title="Code preview";frame.style.cssText="width:100%;height:220px;background:white;border:1px solid #aaa;border-radius:10px";
    const src=currentLang==="CSS"?"<style>"+source.replace(/<\/style/gi,"")+"</style><main><h1>Hello, world!</h1><p>Change your CSS and preview the result.</p><button>Example button</button></main>":source;
    out.replaceChildren(frame);frame.srcdoc=src;output="Preview opened";
@@ -180,10 +180,19 @@ async function runLessonCode(checkOnly){
    else say("Not passed yet.\nYour output: "+(output||"(empty)")+"\nExpected: "+expected);
    return;
   }
-  const runtime=RUNTIMES[currentLang];
-  if(!runtime){say("No execution service is configured for this language yet.");return}
-  say("This language's runner is not configured yet. Python and JavaScript run in your browser; C, C++, and C# use the online compiler.");
-  return;
+  const runtime=RUNTIMES[targetLang];if(!runtime){say("This track needs its native environment. Roblox game APIs must be tested in Roblox Studio.");return}
+  say("Connecting to the free public compiler…");const compilerListResponse=await fetch("https://wandbox.org/api/list.json");if(!compilerListResponse.ok)throw new Error("Compiler list HTTP "+compilerListResponse.status);const compilerCatalog=await compilerListResponse.json();
+  const compilerAliases={"C":["c"],"C++":["c++"],"C#":["c#","csharp"],"Go (Golang)":["go","golang"],"SQL":["sql","sqlite3"],"JavaScript":["javascript","nodejs"],"Python":["python"],"TypeScript":["typescript"],"PHP":["php"],"Kotlin":["kotlin"],"Rust":["rust"],"Swift":["swift"],"R":["r"],"Lua":["lua"],"Java":["java"]};
+  const accepted=(compilerAliases[targetLang]||[runtime[0]]).map(x=>x.toLowerCase());const choices=compilerCatalog.filter(c=>accepted.includes(String(c.language||"").toLowerCase())||accepted.includes(String(c.name||"").toLowerCase()));if(!choices.length)throw new Error("No public compiler for "+targetLang+" was listed. Try again later.");const selectedCompiler=choices.find(c=>/gcc|clang|python|nodejs|java|php|kotlin|rust|swift|golang|go-|lua|sqlite|r-|typescript|dotnet|mono/i.test(c.name))||choices[0];let code=source;
+  if(targetLang==="C++"&&!/\bint\s+main\s*\(/.test(code))code="#include <iostream>\n#include <string>\nint main(){\n"+code+"\nreturn 0;\n}";
+  if(targetLang==="C"&&!/\bint\s+main\s*\(/.test(code))code="#include <stdio.h>\nint main(void){\n"+code+"\nreturn 0;\n}";
+  if(targetLang==="C#"&&!/\bclass\s+\w+/.test(code))code="using System;\nclass Program{static void Main(){\n"+code+"\n}}";
+  if(targetLang==="Java"&&!/class\s+Main/.test(code))code="class Main{public static void main(String[] args){\n"+code+"\n}}";
+  if(targetLang==="Kotlin"&&!/fun\s+main\s*\(/.test(code))code="fun main(){\n"+code+"\n}";
+  if(targetLang==="Rust"&&!/fn\s+main\s*\(/.test(code))code="fn main(){\n"+code+"\n}";
+  if(targetLang==="Go (Golang)"&&!/package\s+main/.test(code))code='package main\nimport "fmt"\nfunc main(){\n'+code+"\n}";
+  if(targetLang==="PHP"&&!/<\?php/i.test(code))code="<?php\n"+code;
+  const compilerResponse=await fetch("https://wandbox.org/api/compile.json",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({compiler:selectedCompiler.name,code,stdin:"",save:false})});if(!compilerResponse.ok)throw new Error("Compiler HTTP "+compilerResponse.status);const compilerResult=await compilerResponse.json();output=String(compilerResult.program_output||"").trim();error=String(compilerResult.compiler_error||compilerResult.program_error||compilerResult.compiler_message||"").trim();if((compilerResult.status!==undefined&&String(compilerResult.status)!=="0")||(error&&!output)){say(error||"Compilation failed",false);return}if(!checkOnly){say(output||"(no output)",true);return}const expected=["Hello, world!","Hello, Ada","negative","5","4"][i];const norm=output.replace(/\r/g,"").replace(/^\[1\]\s*/,"").replace(/\s+/g," ").trim();if(norm===expected||norm.includes(expected)){passLesson();say("Passed! Expected result matched: "+expected,true)}else say("Not passed yet.\nYour output: "+(output||"(empty)")+"\nExpected: "+expected);return;
  }
  catch(e){say("Couldn't reach the online runner. Check your connection and try again.\n"+e.message+"\nIf this persists, the public runner may be unavailable.")}
  finally{if(check){check.disabled=false;check.textContent="Run tests & unlock next lesson"}if(run)run.disabled=false}
