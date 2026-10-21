@@ -4,9 +4,9 @@
 
 ## Technology paths
 
-Python, HTML, CSS, JavaScript, Java, C++, TypeScript, PHP, Kotlin, C+, C#, Rust, Swift, React, SQL, R, Go (Golang), **standard Lua**, and **Roblox Lua (Luau)**.
+Python, HTML, CSS, JavaScript, Java, C++, TypeScript, PHP, Kotlin, C, C#, Rust, Swift, React, SQL, R, Go (Golang), **standard Lua**, and **Roblox Lua (Luau)**.
 
-Lua and Roblox Luau are separate learning paths. Roblox content focuses on Studio, events, client/server boundaries, replication and server-authoritative game logic. Standard Lua focuses on the general-purpose embeddable language. C+ is retained as a requested label, but it is not a widely standardized language designation like C or C++; clarify the intended compiler/language before treating it as a real course.
+Lua and Roblox Luau are separate learning paths. Roblox content focuses on Studio, events, client/server boundaries, replication and server-authoritative game logic. Standard Lua focuses on the general-purpose embeddable language. The C track teaches standard C.
 
 ## Run locally
 
