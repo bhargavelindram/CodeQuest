@@ -31,7 +31,7 @@ Then visit http://localhost:8000.
 - Diagnostic quiz with answer explanations, goals, projects, achievements and self-reported study streak.
 - Browser-local progress with JSON export/import.
 - MIT licence and contribution guide.
-- No sign-in, paid backend, ads, telemetry, subscription, premium tier or usage cap.
+- No ads, paid tier, energy meter or lesson cap. Optional cloud features require separate account configuration.
 
 ## Cloud features
 
@@ -39,7 +39,7 @@ Optional Google sign-in, private progress sync, public community XP leaderboard,
 
 ## Free access policy
 
-CodeQuest has no energy system, daily lesson cap, premium course lock, paid subscription, ads, or paid XP boosts. Daily targets are optional and never restrict lessons. The built-in Code Coach is a free, offline rule-based helper, not a hosted generative AI model. Certificates are printable local records, not externally verified credentials. Cross-device sync and a real AI mentor need additional backend/provider setup.
+CodeQuest has no energy system, daily lesson cap, premium course lock, paid subscription, ads, or paid XP boosts. Daily targets are optional and never restrict lessons. The built-in Code Coach works offline; a natural-language AI mentor is optional and requires backend configuration. Local certificates are not externally verified. Cross-device sync and signed certificates require the setup in SETUP.md.
 
 ## Honest scope
 
