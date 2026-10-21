@@ -38,7 +38,7 @@ supabase functions deploy issue-certificate
 supabase functions deploy verify-certificate
 ```
 
-Supabase supplies its project URL and service-role credentials to deployed Edge Functions. Do not copy the service-role key into the frontend. The AI tutor has a limit of 20 requests per signed-in user per day in the database schema. This is a safety limit for the optional AI feature; it does not limit lessons or code practice.
+Supabase supplies its project URL and service-role credentials to deployed Edge Functions. Do not copy the service-role key into the frontend. CodeQuest does not impose a daily AI request cap; the external AI provider may still enforce its own free-tier quota, rate limits, and terms.
 
 ## 4. What the features mean
 
